@@ -1,0 +1,93 @@
+# GitHub Actions Workflow created for testing and preparing the plugin release in following steps:
+# - setup .net core environment,
+# - restore nuget package with .net core cli,
+# - run build task and prepare artifact for the further tests,
+# - run test with .net cli with opencover reporter,
+# - create a draft release.
+#
+# Workflow is triggered on push and pull_request events.
+#
+# Docs:
+# - GitHub Actions: https://help.github.com/en/actions
+#
+
+name: Build
+
+on: [ push ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        dotnet: [ '3.1.x' ]
+        node: [ '14' ]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ matrix.dotnet }}
+
+    - name: Setup node
+      uses: actions/setup-node@v2
+      with:
+          node-version: ${{ matrix.node }}
+
+    - uses: actions/cache@v2
+      with:
+           path: ~/.nuget/packages
+           # Look to see if there is a cache hit for the corresponding requirements file
+           key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+           restore-keys: |
+               ${{ runner.os }}-nuget
+
+    - name: Cache Node.js modules
+      uses: actions/cache@v2
+      with:
+          # npm cache files are stored in `~/.npm` on Linux/macOS
+          path: ~/.npm
+          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+              ${{ runner.OS }}-node-
+              ${{ runner.OS }}-
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Test all
+      run: dotnet test -p:CollectCoverage=true -p:CoverletOutput=TestResults/ -p:CoverletOutputFormat=opencover --verbosity normal
+
+    - name: Upload dotnet test results
+      uses: actions/upload-artifact@v2
+      with:
+        name: dotnet-results-${{ matrix.dotnet }}
+        path: test/Thoughtworks.Gala.WebApi.UnitTests/TestResults
+        # Use always() to always run this step to publish test results when there are test failures
+        #if: ${{ always() }}
+
+    - name: Build release
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Publish artifacts
+      run: |
+          dotnet publish src/Thoughtworks.Gala.WebApi/Thoughtworks.Gala.WebApi.csproj --configuration Release --no-restore --no-build --output publish/webapi
+          dotnet publish src/Thoughtworks.Gala.Web/Thoughtworks.Gala.Web.csproj --configuration Release --no-restore --no-build --output publish/web
+
+    # Upload webapi artifacts
+    - name: Upload webapi artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: webapi-artifact
+        path: publish/webapi
+
+      # Upload web artifacts
+    - name: Upload webapi artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: web-artifact
+        path: publish/web
