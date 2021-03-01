@@ -9,7 +9,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests
         [Theory]
         [InlineData(5, 10, "/api/v1/galas", "http://localhost:5000/api/v1/galas?pageNumber=5&pageSize=10")]
         [InlineData(2, 5, "/api/programs", "http://localhost:5000/api/programs?pageNumber=2&pageSize=5")]
-        public void Can_GetPageUri_With_DefaultFilter(
+        public void Should_GetPageUri_With_DefaultFilter(
             int pageNumber,
             int pageSize,
             string route,
@@ -29,7 +29,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests
         }
 
         [Fact]
-        public void Can_GetPageUrl_With_LargePageSize()
+        public void Should_GetPageUrl_With_LargePageSize()
         {
             var filter = new PaginationFilter(12, 456);
             var uriService = new PaginationUriService("http://localhost:5000");

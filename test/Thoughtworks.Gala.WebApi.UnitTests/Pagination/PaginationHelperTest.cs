@@ -9,7 +9,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Pagination
             = new PaginationUriService("http://localhost:5000/");
 
         [Fact]
-        public void Get_PagedResponse_When_Input_Valid()
+        public void Should_Get_PagedResponse_When_Input_Valid()
         {
             var data = new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
             var pagedResponse = data.ToPagedReponse(
