@@ -9,9 +9,8 @@ docker run --rm \
   -it \
   --name dynamodb-local \
   --net "host" \
-  --publish 8000:8000 \
-  --volume $(pwd)/.dynamodb:/dynamodb/data \
-  --workdir /dynamodb \
+  --volume $(pwd)/.dynamodb:/home/dynamodblocal/data \
+  --workdir /home/dynamodblocal \
   amazon/dynamodb-local \
-    -sharedDb -optimizeDbBeforeStartup -dbPath ./data
+    -jar DynamoDBLocal.jar -sharedDb -optimizeDbBeforeStartup -dbPath ./data
   

@@ -85,6 +85,8 @@ namespace Thoughtworks.Gala.WebApi
                 var xmlPath = System.IO.Path.Combine(AppContext.BaseDirectory, xmlFile);
                 c.IncludeXmlComments(xmlPath);
             }).AddSwaggerGenNewtonsoftSupport();
+
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
