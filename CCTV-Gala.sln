@@ -25,6 +25,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{44F1427E-A7B
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{43C3B572-219B-4719-BAB6-C38171262194}"
+ProjectSection(SolutionItems) = preProject
+	scripts\local-dynamodb.sh = scripts\local-dynamodb.sh
+	scripts\init-dynamodb.sh = scripts\init-dynamodb.sh
+EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Thoughtworks.Gala.Web", "src\Thoughtworks.Gala.Web\Thoughtworks.Gala.Web.csproj", "{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}"
 EndProject
