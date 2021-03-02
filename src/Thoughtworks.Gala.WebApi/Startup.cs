@@ -1,6 +1,5 @@
-using System;
-using System.Diagnostics.CodeAnalysis;
 using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -8,7 +7,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using System;
+using System.Diagnostics.CodeAnalysis;
+using Thoughtworks.Gala.WebApi.Entities;
 using Thoughtworks.Gala.WebApi.Pagination;
+using Thoughtworks.Gala.WebApi.Repositories;
 
 namespace Thoughtworks.Gala.WebApi
 {
@@ -43,9 +46,14 @@ namespace Thoughtworks.Gala.WebApi
             {
                 services.AddAWSService<IAmazonDynamoDB>();
             }
+            services.AddTransient<IDynamoDBContext>(sp => new DynamoDBContext(sp.GetService<IAmazonDynamoDB>()));
+
+            services.AddScoped<IRepository<Guid, GalaEntity>>(sp => new GalaRepository(sp.GetService<IDynamoDBContext>()));
+            services.AddScoped<IRepository<Guid, ProgramEntity>>(sp => new ProgramRepository(sp.GetService<IDynamoDBContext>()));
+            services.AddScoped<IRepository<Guid, PerformerEntity>>(sp => new PerformerRepository(sp.GetService<IDynamoDBContext>()));
 
             services.AddHttpContextAccessor();
-            services.AddSingleton((Func<IServiceProvider, IPaginationUriService>) (o =>
+            services.AddSingleton((Func<IServiceProvider, IPaginationUriService>)(o =>
             {
                 var accessor = o.GetRequiredService<IHttpContextAccessor>();
                 var request = accessor.HttpContext.Request;

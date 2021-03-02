@@ -1,12 +1,13 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Amazon.DynamoDBv2;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using Thoughtworks.Gala.WebApi.Entities;
 using Thoughtworks.Gala.WebApi.Pagination;
+using Thoughtworks.Gala.WebApi.Repositories;
 using Thoughtworks.Gala.WebApi.ValueObjects;
 using Thoughtworks.Gala.WebApi.ViewModels;
 
@@ -26,16 +27,16 @@ namespace Thoughtworks.Gala.WebApi.Controllers
     [ProducesResponseType(StatusCodes.Status501NotImplemented)]
     public class ProgramsController : ControllerBase
     {
-        private readonly IAmazonDynamoDB _amazonDynamoDb;
+        private readonly IRepository<Guid, ProgramEntity> _programRepository;
         private readonly IPaginationUriService _paginationUriService;
         private readonly ILogger<ProgramsController> _logger;
 
         public ProgramsController(
-            IAmazonDynamoDB amazonDynamoDb,
+            IRepository<Guid, ProgramEntity> programRepository,
             IPaginationUriService paginationUriService,
             ILogger<ProgramsController> logger)
         {
-            _amazonDynamoDb = amazonDynamoDb;
+            _programRepository = programRepository;
             _paginationUriService = paginationUriService;
             _logger = logger;
         }

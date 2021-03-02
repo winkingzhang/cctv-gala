@@ -9,30 +9,30 @@ using NotSupportedException = Thoughtworks.Gala.WebApi.Exceptions.NotSupportedEx
 
 namespace Thoughtworks.Gala.WebApi.Entities
 {
-    [DynamoDBTable("Galas")]
-    public class GalaEntity : IEntity<Guid>, IAssignableEntity<Guid>
+    [DynamoDBTable("Programs")]
+    public sealed class ProgramEntity : IEntity<Guid>, IAssignableEntity<Guid>
     {
-        [DynamoDBHashKey("GalaId", Converter = typeof(GuidConverter))]
+        [DynamoDBHashKey("programId", Converter = typeof(GuidConverter))]
         public Guid Id { get; set; }
 
         public string Name { get; set; }
 
-        public uint Year { get; set; }
+        public string Introduction { get; set; }
 
-        [DynamoDBProperty("Programs")]
-        public IReadOnlyList<Guid> ProgramIds { get; set; }
+        [DynamoDBProperty("Performers")]
+        public IReadOnlyList<Guid> PerformerIds { get; set; }
 
         public Task AssignFromAsync(IEntity<Guid> other)
         {
-            if (!(other is GalaEntity source))
+            if (!(other is ProgramEntity source))
             {
-                throw new NotSupportedException(nameof(GalaEntity));
+                throw new NotSupportedException(nameof(ProgramEntity));
             }
 
             // ignore id
             Name = source.Name;
-            Year = source.Year;
-            ProgramIds = source.ProgramIds?.ToList().AsReadOnly();
+            Introduction = source.Introduction;
+            PerformerIds = source.PerformerIds?.ToList().AsReadOnly();
 
             return Task.CompletedTask;
         }

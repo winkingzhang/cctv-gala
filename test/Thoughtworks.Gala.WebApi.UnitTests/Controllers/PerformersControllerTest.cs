@@ -1,13 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Amazon.DynamoDBv2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Controllers;
+using Thoughtworks.Gala.WebApi.Entities;
 using Thoughtworks.Gala.WebApi.Pagination;
+using Thoughtworks.Gala.WebApi.Repositories;
 using Thoughtworks.Gala.WebApi.ValueObjects;
 using Thoughtworks.Gala.WebApi.ViewModels;
 using Xunit;
@@ -16,13 +17,13 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
 {
     public class PerformersControllerTest
     {
-        private Mock<IAmazonDynamoDB> _dynamodbMock;
+        private Mock<IRepository<Guid, PerformerEntity>> _repoMock;
         private IPaginationUriService _paginationUriService;
         private Mock<ILogger<PerformersController>> _logger;
 
         private void SetupMocks()
         {
-            _dynamodbMock = new Mock<IAmazonDynamoDB>();
+            _repoMock = new Mock<IRepository<Guid, PerformerEntity>>();
             _paginationUriService = new PaginationUriService("http://localhost:5000/");
             _logger = new Mock<ILogger<PerformersController>>();
         }
@@ -31,7 +32,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         public async Task Should_Create_Performer_WithValidInput()
         {
             SetupMocks();
-            var performersController = new PerformersController(_dynamodbMock.Object, _paginationUriService, _logger.Object);
+            var performersController = new PerformersController(_repoMock.Object, _paginationUriService, _logger.Object);
             Assert.NotNull(performersController);
 
             var performerRequest = new Request<PerformerViewModel.Creation>();
@@ -51,13 +52,13 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         {
             SetupMocks();
 
-            var performersController = new PerformersController(_dynamodbMock.Object, _paginationUriService, _logger.Object)
+            var performersController = new PerformersController(_repoMock.Object, _paginationUriService, _logger.Object)
             {
                 ControllerContext = new ControllerContext
                 {
                     HttpContext = new DefaultHttpContext()
                     {
-                        Request = {Path = new PathString("/api/performers")}
+                        Request = { Path = new PathString("/api/performers") }
                     }
                 }
             };
@@ -75,7 +76,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         {
             SetupMocks();
 
-            var performersController = new PerformersController(_dynamodbMock.Object, _paginationUriService, _logger.Object);
+            var performersController = new PerformersController(_repoMock.Object, _paginationUriService, _logger.Object);
             Assert.NotNull(performersController);
 
             var performer = await performersController.EditPerformerByIdAsync(
@@ -92,7 +93,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         {
             SetupMocks();
 
-            var performersController = new PerformersController(_dynamodbMock.Object, _paginationUriService, _logger.Object);
+            var performersController = new PerformersController(_repoMock.Object, _paginationUriService, _logger.Object);
             Assert.NotNull(performersController);
 
             var performer = await performersController.GetPerformerByIdAsync(Guid.NewGuid()) as OkObjectResult;
@@ -106,7 +107,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         {
             SetupMocks();
 
-            var performersController = new PerformersController(_dynamodbMock.Object, _paginationUriService, _logger.Object);
+            var performersController = new PerformersController(_repoMock.Object, _paginationUriService, _logger.Object);
             Assert.NotNull(performersController);
 
             var performer = await performersController.DeletePerformerByIdAsync(Guid.NewGuid()) as OkObjectResult;

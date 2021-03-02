@@ -1,13 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Amazon.DynamoDBv2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Controllers;
+using Thoughtworks.Gala.WebApi.Entities;
 using Thoughtworks.Gala.WebApi.Pagination;
+using Thoughtworks.Gala.WebApi.Repositories;
 using Thoughtworks.Gala.WebApi.ValueObjects;
 using Thoughtworks.Gala.WebApi.ViewModels;
 using Xunit;
@@ -16,13 +17,13 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
 {
     public class GalasControllerTest
     {
-        private Mock<IAmazonDynamoDB> _dynamodbMock;
+        private Mock<IRepository<Guid, GalaEntity>> _repoMock;
         private IPaginationUriService _paginationUriService;
         private Mock<ILogger<GalasController>> _logger;
 
         private void SetupMocks()
         {
-            _dynamodbMock = new Mock<IAmazonDynamoDB>();
+            _repoMock = new Mock<IRepository<Guid, GalaEntity>>();
             _paginationUriService = new PaginationUriService("http://localhost:5000/");
             _logger = new Mock<ILogger<GalasController>>();
         }
@@ -31,7 +32,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         public async Task Should_Get_Gala_When_CreateGala_WithValidInput()
         {
             SetupMocks();
-            var galasController = new GalasController(_dynamodbMock.Object, _paginationUriService, _logger.Object);
+            var galasController = new GalasController(_repoMock.Object, _paginationUriService, _logger.Object);
             Assert.NotNull(galasController);
 
             var galaRequest = new Request<GalaViewModel.Creation>();
@@ -50,7 +51,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         public async Task Should_Get_BadRequest_When_CreateGala_WithInvalidInput()
         {
             SetupMocks();
-            var galasController = new GalasController(_dynamodbMock.Object, _paginationUriService, _logger.Object)
+            var galasController = new GalasController(_repoMock.Object, _paginationUriService, _logger.Object)
             {
                 ControllerContext = new ControllerContext()
             };
@@ -70,7 +71,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         {
             SetupMocks();
 
-            var galasController = new GalasController(_dynamodbMock.Object, _paginationUriService, _logger.Object)
+            var galasController = new GalasController(_repoMock.Object, _paginationUriService, _logger.Object)
             {
                 ControllerContext = new ControllerContext
                 {
@@ -94,7 +95,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         {
             SetupMocks();
 
-            var galasController = new GalasController(_dynamodbMock.Object, _paginationUriService, _logger.Object);
+            var galasController = new GalasController(_repoMock.Object, _paginationUriService, _logger.Object);
             Assert.NotNull(galasController);
 
             var gala = await galasController.EditGalaByIdAsync(
@@ -111,7 +112,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         {
             SetupMocks();
 
-            var galasController = new GalasController(_dynamodbMock.Object, _paginationUriService, _logger.Object)
+            var galasController = new GalasController(_repoMock.Object, _paginationUriService, _logger.Object)
             {
                 ControllerContext = new ControllerContext
                 {
@@ -135,7 +136,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         {
             SetupMocks();
 
-            var galasController = new GalasController(_dynamodbMock.Object, _paginationUriService, _logger.Object);
+            var galasController = new GalasController(_repoMock.Object, _paginationUriService, _logger.Object);
             Assert.NotNull(galasController);
 
             var gala = await galasController.GetGalaByIdAsync(Guid.NewGuid()) as OkObjectResult;
@@ -149,7 +150,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         {
             SetupMocks();
 
-            var galasController = new GalasController(_dynamodbMock.Object, _paginationUriService, _logger.Object);
+            var galasController = new GalasController(_repoMock.Object, _paginationUriService, _logger.Object);
             Assert.NotNull(galasController);
 
             var gala = await galasController.DeleteGalaByIdAsync(Guid.NewGuid()) as OkObjectResult;

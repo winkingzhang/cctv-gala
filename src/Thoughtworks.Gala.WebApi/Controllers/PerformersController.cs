@@ -1,12 +1,13 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Amazon.DynamoDBv2;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using Thoughtworks.Gala.WebApi.Entities;
 using Thoughtworks.Gala.WebApi.Pagination;
+using Thoughtworks.Gala.WebApi.Repositories;
 using Thoughtworks.Gala.WebApi.ValueObjects;
 using Thoughtworks.Gala.WebApi.ViewModels;
 
@@ -26,17 +27,17 @@ namespace Thoughtworks.Gala.WebApi.Controllers
     [ProducesResponseType(StatusCodes.Status501NotImplemented)]
     public class PerformersController : ControllerBase
     {
-        private readonly IAmazonDynamoDB _amazonDynamoDb;
+        private readonly IRepository<Guid, PerformerEntity> _performerRepository;
         private readonly IPaginationUriService _paginationUriService;
         private readonly ILogger<PerformersController> _logger;
 
         public PerformersController(
-            IAmazonDynamoDB amazonDynamoDb,
+            IRepository<Guid, PerformerEntity> performerRepository,
             IPaginationUriService paginationUriService,
             ILogger<PerformersController> logger
         )
         {
-            _amazonDynamoDb = amazonDynamoDb;
+            _performerRepository = performerRepository;
             _paginationUriService = paginationUriService;
             _logger = logger;
         }
@@ -52,7 +53,7 @@ namespace Thoughtworks.Gala.WebApi.Controllers
             _logger.LogDebug("CreatePerformerAsync");
             await Task.Delay(0);
             return CreatedAtRoute("GetPerformerById",
-                new {performerId = 0},
+                new { performerId = 0 },
                 new Response<PerformerViewModel>(default));
         }
 

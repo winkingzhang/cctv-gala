@@ -5,9 +5,9 @@ using Thoughtworks.Gala.WebApi.Entities;
 
 namespace Thoughtworks.Gala.WebApi.Repositories
 {
-    public sealed class GalaRepository : Repository<Guid, GalaEntity>
+    public sealed class ProgramRepository : Repository<Guid, ProgramEntity>
     {
-        public GalaRepository([NotNull] IDynamoDBContext context)
+        public ProgramRepository([NotNull] IDynamoDBContext context)
             : base(context)
         {
         }

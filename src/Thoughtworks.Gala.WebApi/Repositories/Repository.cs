@@ -52,13 +52,12 @@ namespace Thoughtworks.Gala.WebApi.Repositories
         public async Task<TEntity> UpdateEntityAsync([NotNull] TKey key, [NotNull] TEntity entity, CancellationToken cancellationToken = default)
         {
             var original = await Context.LoadAsync<TEntity>(key, cancellationToken);
-            if (ReferenceEquals(null, original))
+            if (original is null)
             {
                 throw new NotFoundException($"{key}");
             }
 
-            var assignable = original as IAssignableEntity<TKey>;
-            if (ReferenceEquals(null, assignable))
+            if (!(original is IAssignableEntity<TKey> assignable))
             {
                 throw new NotSupportedException(entity.GetType().Name);
             }
@@ -73,7 +72,7 @@ namespace Thoughtworks.Gala.WebApi.Repositories
         public async Task<TEntity> DeleteEntityAsync([NotNull] TKey key, CancellationToken cancellationToken = default)
         {
             var original = await Context.LoadAsync<TEntity>(key, cancellationToken);
-            if (ReferenceEquals(null, original))
+            if (original is null)
             {
                 throw new NotFoundException($"{key}");
             }
