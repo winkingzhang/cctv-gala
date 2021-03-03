@@ -15,6 +15,6 @@ namespace Thoughtworks.Gala.WebApi.Repositories
 
         Task<TEntity> UpdateEntityAsync(TKey key, TEntity entity, CancellationToken cancellationToken = default);
 
-        Task<TEntity> DeleteEntityAsync(TKey key, CancellationToken cancellationToken = default);
+        Task<TEntity> DeleteEntityAsync(TKey key, bool hardDelete = false, CancellationToken cancellationToken = default);
     }
 }

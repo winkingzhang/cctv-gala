@@ -1,12 +1,10 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Entities;
 using Thoughtworks.Gala.WebApi.Exceptions;
-
 using NotSupportedException = Thoughtworks.Gala.WebApi.Exceptions.NotSupportedException;
 
 namespace Thoughtworks.Gala.WebApi.Repositories
@@ -27,13 +25,15 @@ namespace Thoughtworks.Gala.WebApi.Repositories
 
         protected abstract TKey NextKey();
 
-        public async Task<TEntity> CreateEntityAsync([NotNull] TEntity entity, CancellationToken cancellationToken = default)
+        public async Task<TEntity> CreateEntityAsync([NotNull] TEntity entity,
+            CancellationToken cancellationToken = default)
         {
             var key = NextKey();
             if (key.Equals(entity.Id))
             {
                 throw new ConflictException($"{key}");
             }
+
             entity.Id = key;
             await Context.SaveAsync(entity, cancellationToken);
             return await Context.LoadAsync<TEntity>(key, cancellationToken);
@@ -46,10 +46,12 @@ namespace Thoughtworks.Gala.WebApi.Repositories
             {
                 throw new NotFoundException($"{key}");
             }
+
             return original;
         }
 
-        public async Task<TEntity> UpdateEntityAsync([NotNull] TKey key, [NotNull] TEntity entity, CancellationToken cancellationToken = default)
+        public async Task<TEntity> UpdateEntityAsync([NotNull] TKey key, [NotNull] TEntity entity,
+            CancellationToken cancellationToken = default)
         {
             var original = await Context.LoadAsync<TEntity>(key, cancellationToken);
             if (original is null)
@@ -69,14 +71,32 @@ namespace Thoughtworks.Gala.WebApi.Repositories
             return assignable as TEntity;
         }
 
-        public async Task<TEntity> DeleteEntityAsync([NotNull] TKey key, CancellationToken cancellationToken = default)
+        public async Task<TEntity> DeleteEntityAsync(
+            [NotNull] TKey key,
+            bool hardDelete = false,
+            CancellationToken cancellationToken = default
+        )
         {
             var original = await Context.LoadAsync<TEntity>(key, cancellationToken);
             if (original is null)
             {
                 throw new NotFoundException($"{key}");
             }
-            await Context.DeleteAsync(key, cancellationToken);
+
+            if (hardDelete)
+            {
+                await Context.DeleteAsync(key, cancellationToken);
+            }
+            else if (original is ISoftDeletableEntity<TKey> marked)
+            {
+                marked.MarkAsDeleted();
+                await Context.SaveAsync(marked, cancellationToken);
+            }
+            else
+            {
+                throw new NotFoundException(original.GetType().Name);
+            }
+
             return original;
         }
     }

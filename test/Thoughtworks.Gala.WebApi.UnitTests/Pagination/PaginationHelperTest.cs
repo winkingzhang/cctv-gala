@@ -11,7 +11,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Pagination
         [Fact]
         public void Should_Get_PagedResponse_When_Input_Valid()
         {
-            var data = new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+            var data = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
             var pagedResponse = data.ToPagedReponse(
                 new PaginationFilter(2, 5),
                 data.Length,
@@ -22,7 +22,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Pagination
 
             Assert.NotNull(pagedResponse.Data);
             Assert.Equal(data, pagedResponse.Data);
-            
+
             Assert.True(pagedResponse.Succeeded);
             Assert.Null(pagedResponse.Errors);
             Assert.Empty(pagedResponse.Message);

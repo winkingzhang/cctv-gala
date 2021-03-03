@@ -1,16 +1,14 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-
 using NotSupportedException = Thoughtworks.Gala.WebApi.Exceptions.NotSupportedException;
 
 namespace Thoughtworks.Gala.WebApi.Entities
 {
     [DynamoDBTable("Programs")]
-    public sealed class ProgramEntity : IEntity<Guid>, IAssignableEntity<Guid>
+    public sealed class ProgramEntity : IEntity<Guid>, IAssignableEntity<Guid>, ISoftDeletableEntity<Guid>
     {
         [DynamoDBHashKey("programId", Converter = typeof(GuidConverter))]
         public Guid Id { get; set; }
@@ -19,8 +17,13 @@ namespace Thoughtworks.Gala.WebApi.Entities
 
         public string Introduction { get; set; }
 
-        [DynamoDBProperty("Performers")]
-        public IReadOnlyList<Guid> PerformerIds { get; set; }
+        [DynamoDBProperty("Performers")] public Guid[] PerformerIds { get; set; }
+
+        public bool IsDeleted { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+
+        public DateTime UpdatedAt { get; set; }
 
         public Task AssignFromAsync(IEntity<Guid> other)
         {
@@ -32,9 +35,18 @@ namespace Thoughtworks.Gala.WebApi.Entities
             // ignore id
             Name = source.Name;
             Introduction = source.Introduction;
-            PerformerIds = source.PerformerIds?.ToList().AsReadOnly();
+            PerformerIds = source.PerformerIds.ToArray();
+            IsDeleted = source.IsDeleted;
+            CreatedAt = source.CreatedAt;
+            UpdatedAt = DateTime.UtcNow;
 
             return Task.CompletedTask;
+        }
+
+        public void MarkAsDeleted()
+        {
+            IsDeleted = true;
+            UpdatedAt = DateTime.UtcNow;
         }
     }
 }

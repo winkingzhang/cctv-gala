@@ -22,7 +22,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
             var entity = await mockedRepository.CreateEntityAsync(new MockedAssigableEntity(Guid.Empty));
             Assert.NotNull(entity);
         }
-        
+
         [Fact]
         public void Should_Throw_ConflictException_When_CreateEntityAsync_WithExistId()
         {
@@ -36,7 +36,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
                     .GetResult();
             });
         }
-        
+
         [Fact]
         public async Task Should_Get_Entity_When_ReadEntityAsync()
         {
@@ -45,8 +45,8 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
             var entity = await mockedRepository.ReadEntityAsync(Guid.NewGuid());
             Assert.NotNull(entity);
         }
-        
-        
+
+
         [Fact]
         public void Should_Throw_NotFoundException_When_ReadEntityAsync_WithNotExist()
         {
@@ -91,7 +91,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
                     .GetResult();
             });
         }
-        
+
         [Fact]
         public void Should_Throw_NotSupportedException_When_UpdateEntityAsync_WithSimpleEntity()
         {
@@ -112,7 +112,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
         {
             var mockedContext = new Mock<IDynamoDBContext>();
             var mockedRepository = new MockedRepository(mockedContext);
-            var entity = await mockedRepository.DeleteEntityAsync(Guid.NewGuid());
+            var entity = await mockedRepository.DeleteEntityAsync(Guid.NewGuid(), true);
             Assert.NotNull(entity);
         }
 
@@ -189,7 +189,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
                     .ReturnsAsync(CreateEntityInstance(It.IsAny<TKey>()));
                 mockedContext.Setup(dbc => dbc.SaveAsync<TEntity>(It.IsAny<TEntity>(), It.IsAny<CancellationToken>()))
                     .Returns(Task.Delay(1));
-                mockedContext.Setup(dbc => dbc.DeleteAsync<TKey>(It.IsAny<TKey>(), It.IsAny<CancellationToken>()))
+                mockedContext.Setup(dbc => dbc.DeleteAsync<TKey>(It.IsAny<TKey>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                     .Returns(Task.Delay(1));
             }
         }
@@ -197,7 +197,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
         private class MockedSimpleRepository : MockedBaseRepository<Guid, MockedSimpleEntity>
         {
             internal static readonly Guid Id = Guid.NewGuid();
-                
+
             public MockedSimpleRepository(Mock<IDynamoDBContext> mockedContext) : base(mockedContext)
             {
                 mockedContext.Setup(dbc =>

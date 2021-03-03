@@ -8,7 +8,7 @@ using NotSupportedException = Thoughtworks.Gala.WebApi.Exceptions.NotSupportedEx
 namespace Thoughtworks.Gala.WebApi.Entities
 {
     [DynamoDBTable("Performers")]
-    public sealed class PerformerEntity : IEntity<Guid>, IAssignableEntity<Guid>
+    public sealed class PerformerEntity : IEntity<Guid>, IAssignableEntity<Guid>, ISoftDeletableEntity<Guid>
     {
         [DynamoDBHashKey("performerId", Converter = typeof(GuidConverter))]
         public Guid Id { get; set; }
@@ -16,6 +16,12 @@ namespace Thoughtworks.Gala.WebApi.Entities
         public string Name { get; set; }
 
         public string Introduction { get; set; }
+
+        public bool IsDeleted { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+
+        public DateTime UpdatedAt { get; set; }
 
         public Task AssignFromAsync(IEntity<Guid> other)
         {
@@ -27,8 +33,17 @@ namespace Thoughtworks.Gala.WebApi.Entities
             // ignore id
             Name = source.Name;
             Introduction = source.Introduction;
+            IsDeleted = source.IsDeleted;
+            CreatedAt = source.CreatedAt;
+            UpdatedAt = DateTime.UtcNow;
 
             return Task.CompletedTask;
+        }
+
+        public void MarkAsDeleted()
+        {
+            IsDeleted = true;
+            UpdatedAt = DateTime.UtcNow;
         }
     }
 }

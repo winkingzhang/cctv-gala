@@ -32,7 +32,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
             var mockedContext = new Mock<IDynamoDBContext>();
             mockedContext.Setup(dbc =>
                     dbc.LoadAsync<GalaEntity>(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new GalaEntity() {Id = Guid.NewGuid(), Name = "mock", Year = 2020});
+                .ReturnsAsync(new GalaEntity() { Id = Guid.NewGuid(), Name = "mock", Year = 2020 });
             mockedContext.Setup(dbc =>
                     dbc.SaveAsync(It.IsAny<GalaEntity>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
@@ -47,14 +47,14 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
             Assert.IsType<Guid>(gala.Id);
             Assert.NotEqual<Guid>(Guid.Empty, gala.Id);
             Assert.Same("mocked", gala.Name);
-            Assert.Equal((uint) DateTime.Now.Year, gala.Year);
+            Assert.Equal((uint)DateTime.Now.Year, gala.Year);
 
             Assert.Throws<NotSupportedException>(() =>
             {
                 gala.AssignFromAsync(new MockedSimpleEntity());
             });
         }
-        
+
         private class MockedSimpleEntity : IEntity<Guid>
         {
             public Guid Id { get; set; }

@@ -1,9 +1,11 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Entities;
 using Thoughtworks.Gala.WebApi.Pagination;
@@ -19,25 +21,25 @@ namespace Thoughtworks.Gala.WebApi.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-#if !DEBUG
-    [Microsoft.AspNetCore.Authorization.Authorize]
-#endif
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(StatusCodes.Status501NotImplemented)]
     public class PerformersController : ControllerBase
     {
         private readonly IRepository<Guid, PerformerEntity> _performerRepository;
+        private readonly IMapper _mapper;
         private readonly IPaginationUriService _paginationUriService;
         private readonly ILogger<PerformersController> _logger;
 
         public PerformersController(
             IRepository<Guid, PerformerEntity> performerRepository,
+            IMapper mapper,
             IPaginationUriService paginationUriService,
             ILogger<PerformersController> logger
         )
         {
             _performerRepository = performerRepository;
+            _mapper = mapper;
             _paginationUriService = paginationUriService;
             _logger = logger;
         }
@@ -51,10 +53,19 @@ namespace Thoughtworks.Gala.WebApi.Controllers
         )
         {
             _logger.LogDebug("CreatePerformerAsync");
-            await Task.Delay(0);
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ErrorResponse.BadRequest(ModelState));
+            }
+
+            var performerEntity = _mapper.Map<PerformerViewModel.Creation, PerformerEntity>(performerRequest.Data);
+            var createdEntity = await _performerRepository.CreateEntityAsync(performerEntity, CancellationToken.None);
+            var performer = _mapper.Map<PerformerEntity, PerformerViewModel>(createdEntity);
+
             return CreatedAtRoute("GetPerformerById",
-                new { performerId = 0 },
-                new Response<PerformerViewModel>(default));
+                new { performerId = performer.PerformerId },
+                new Response<PerformerViewModel>(performer));
         }
 
         // GET api/performers?pageNumber=&pageSize=
@@ -85,8 +96,9 @@ namespace Thoughtworks.Gala.WebApi.Controllers
         )
         {
             _logger.LogDebug("GetPerformerByIdAsync");
-            await Task.Delay(0);
-            return Ok(new Response<PerformerViewModel>(default));
+            var performerEntity = await _performerRepository.ReadEntityAsync(performerId, CancellationToken.None);
+            var performer = _mapper.Map<PerformerViewModel>(performerEntity);
+            return Ok(new Response<PerformerViewModel>(performer));
         }
 
         // PUT api/performers/{performerId}
@@ -101,8 +113,17 @@ namespace Thoughtworks.Gala.WebApi.Controllers
         )
         {
             _logger.LogDebug("EditPerformerByIdAsync");
-            await Task.Delay(0);
-            return Ok(new Response<PerformerViewModel>(default));
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ErrorResponse.BadRequest(ModelState));
+            }
+
+            var performerEntity = _mapper.Map<PerformerEntity>(performerRequest.Data);
+            var createdEntity = await _performerRepository.UpdateEntityAsync(performerId, performerEntity, CancellationToken.None);
+            var performer = _mapper.Map<PerformerViewModel>(createdEntity);
+
+            return Ok(new Response<PerformerViewModel>(performer));
         }
 
         // DELETE api/performers/{performerId}?hardDelete=true|false
@@ -114,9 +135,11 @@ namespace Thoughtworks.Gala.WebApi.Controllers
             bool hardDelete = false
         )
         {
-            _logger.LogDebug("EditPerformerByIdAsync");
-            await Task.Delay(0);
-            return Ok(new Response<PerformerViewModel>(default));
+            _logger.LogDebug("DeletePerformerByIdAsync");
+
+            var performerEntity = await _performerRepository.DeleteEntityAsync(performerId, hardDelete, CancellationToken.None);
+            var performer = _mapper.Map<PerformerViewModel>(performerEntity);
+            return Ok(new Response<PerformerViewModel>(performer));
         }
     }
 }

@@ -21,10 +21,8 @@ docker run --rm \
       --table-name Galas \
       --attribute-definitions \
         AttributeName=GalaId,AttributeType=S \
-        AttributeName=Year,AttributeType=N \
       --key-schema \
         AttributeName=GalaId,KeyType=HASH \
-        AttributeName=Year,KeyType=RANGE \
       --provisioned-throughput \
         ReadCapacityUnits=10,WriteCapacityUnits=5 \
       --region us-west-2 \

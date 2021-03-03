@@ -1,9 +1,11 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Entities;
 using Thoughtworks.Gala.WebApi.Pagination;
@@ -19,24 +21,24 @@ namespace Thoughtworks.Gala.WebApi.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-#if !DEBUG
-    [Microsoft.AspNetCore.Authorization.Authorize]
-#endif
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(StatusCodes.Status501NotImplemented)]
     public class ProgramsController : ControllerBase
     {
         private readonly IRepository<Guid, ProgramEntity> _programRepository;
+        private readonly IMapper _mapper;
         private readonly IPaginationUriService _paginationUriService;
         private readonly ILogger<ProgramsController> _logger;
 
         public ProgramsController(
             IRepository<Guid, ProgramEntity> programRepository,
+            IMapper mapper,
             IPaginationUriService paginationUriService,
             ILogger<ProgramsController> logger)
         {
             _programRepository = programRepository;
+            _mapper = mapper;
             _paginationUriService = paginationUriService;
             _logger = logger;
         }
@@ -50,10 +52,19 @@ namespace Thoughtworks.Gala.WebApi.Controllers
         )
         {
             _logger.LogDebug("CreateProgramAsync");
-            await Task.Delay(0);
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ErrorResponse.BadRequest(ModelState));
+            }
+
+            var programEntity = _mapper.Map<ProgramViewModel.Creation, ProgramEntity>(programRequest.Data);
+            var createdEntity = await _programRepository.CreateEntityAsync(programEntity, CancellationToken.None);
+            var program = _mapper.Map<ProgramEntity, ProgramViewModel>(createdEntity);
+
             return CreatedAtRoute("GetProgramById",
-                new { galaId = 0, programId = 0 },
-                new Response<ProgramViewModel>(default));
+                new { programId = program.ProgramId },
+                new Response<ProgramViewModel>(program));
         }
 
         // GET api/programs?pageNumber=&pageSize=&galaId=
@@ -85,8 +96,9 @@ namespace Thoughtworks.Gala.WebApi.Controllers
         )
         {
             _logger.LogDebug("GetProgramByIdAsync");
-            await Task.Delay(0);
-            return Ok(new Response<ProgramViewModel>(default));
+            var programEntity = await _programRepository.ReadEntityAsync(programId, CancellationToken.None);
+            var program = _mapper.Map<ProgramViewModel>(programEntity);
+            return Ok(new Response<ProgramViewModel>(program));
         }
 
         // PUT api/programs/{programId}
@@ -101,8 +113,17 @@ namespace Thoughtworks.Gala.WebApi.Controllers
         )
         {
             _logger.LogDebug("EditProgramByIdAsync");
-            await Task.Delay(0);
-            return Ok(new Response<ProgramViewModel>(default));
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ErrorResponse.BadRequest(ModelState));
+            }
+
+            var programEntity = _mapper.Map<ProgramEntity>(programRequest.Data);
+            var createdEntity = await _programRepository.UpdateEntityAsync(programId, programEntity, CancellationToken.None);
+            var program = _mapper.Map<ProgramViewModel>(createdEntity);
+
+            return Ok(new Response<ProgramViewModel>(program));
         }
 
         // DELETE api/programs/{programId}?hardDelete=true|false
@@ -115,8 +136,11 @@ namespace Thoughtworks.Gala.WebApi.Controllers
         )
         {
             _logger.LogDebug("EditProgramByIdAsync");
-            await Task.Delay(0);
-            return Ok(new Response<ProgramViewModel>(default));
+
+            var programEntity = await _programRepository.DeleteEntityAsync(programId, hardDelete, CancellationToken.None);
+            var program = _mapper.Map<ProgramViewModel>(programEntity);
+
+            return Ok(new Response<ProgramViewModel>(program));
         }
     }
 }

@@ -4,7 +4,9 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Thoughtworks.Gala.WebApi.Entities;
 using Thoughtworks.Gala.WebApi.Pagination;
 using Thoughtworks.Gala.WebApi.Repositories;
@@ -19,24 +21,24 @@ namespace Thoughtworks.Gala.WebApi.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-#if !DEBUG
-    [Microsoft.AspNetCore.Authorization.Authorize]
-#endif
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(StatusCodes.Status501NotImplemented)]
     public class GalasController : ControllerBase
     {
         private readonly IRepository<Guid, GalaEntity> _galaRepository;
+        private readonly IMapper _mapper;
         private readonly IPaginationUriService _paginationUriService;
         private readonly ILogger<GalasController> _logger;
 
         public GalasController(
             IRepository<Guid, GalaEntity> galaRepository,
+            IMapper mapper,
             IPaginationUriService paginationUriService,
             ILogger<GalasController> logger)
         {
             _galaRepository = galaRepository;
+            _mapper = mapper;
             _paginationUriService = paginationUriService;
             _logger = logger;
         }
@@ -56,10 +58,13 @@ namespace Thoughtworks.Gala.WebApi.Controllers
                 return BadRequest(new ErrorResponse.BadRequest(ModelState));
             }
 
-            await Task.Delay(0);
+            var galaEntity = _mapper.Map<GalaViewModel.Creation, GalaEntity>(galaRequest.Data);
+            var createdEntity = await _galaRepository.CreateEntityAsync(galaEntity, CancellationToken.None);
+            var gala = _mapper.Map<GalaEntity, GalaViewModel>(createdEntity);
+
             return CreatedAtRoute("GetGalaById",
-                new { galaId = 0 },
-                new Response<GalaViewModel>(default));
+                new { galaId = gala.GalaId },
+                new Response<GalaViewModel>(gala));
         }
 
         // GET api/galas?pageNumber=&pageSize=&years=2020&years=2019
@@ -91,8 +96,9 @@ namespace Thoughtworks.Gala.WebApi.Controllers
         )
         {
             _logger.LogDebug("GetGalaByIdAsync");
-            await Task.Delay(0);
-            return Ok(new Response<GalaViewModel>(default));
+            var galaEntity = await _galaRepository.ReadEntityAsync(galaId, CancellationToken.None);
+            var gala = _mapper.Map<GalaViewModel>(galaEntity);
+            return Ok(new Response<GalaViewModel>(gala));
         }
 
         // GET api/galas/{galaId}/programs?pageNumber=&pageSize=
@@ -122,8 +128,17 @@ namespace Thoughtworks.Gala.WebApi.Controllers
         )
         {
             _logger.LogDebug("EditGalaByIdAsync");
-            await Task.Delay(0);
-            return Ok(new Response<GalaViewModel>(default));
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ErrorResponse.BadRequest(ModelState));
+            }
+
+            var galaEntity = _mapper.Map<GalaEntity>(galaRequest.Data);
+            var createdEntity = await _galaRepository.UpdateEntityAsync(galaId, galaEntity, CancellationToken.None);
+            var gala = _mapper.Map<GalaViewModel>(createdEntity);
+
+            return Ok(new Response<GalaViewModel>(gala));
         }
 
         // DELETE api/galas/{galaId}?hardDelete=true|false
@@ -135,9 +150,11 @@ namespace Thoughtworks.Gala.WebApi.Controllers
             bool hardDelete = false
         )
         {
-            _logger.LogDebug("EditGalaByIdAsync");
-            await Task.Delay(0);
-            return Ok(new Response<GalaViewModel>(default));
+            _logger.LogDebug("DeleteGalaByIdAsync");
+
+            var galaEntity = await _galaRepository.DeleteEntityAsync(galaId, hardDelete, CancellationToken.None);
+            var gala = _mapper.Map<GalaViewModel>(galaEntity);
+            return Ok(new Response<GalaViewModel>(gala));
         }
     }
 }

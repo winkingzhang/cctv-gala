@@ -37,7 +37,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests
 
             Assert.NotNull(actual);
             Assert.Equal("http://localhost:5000/api/performers?pageNumber=12&pageSize=50", actual.AbsoluteUri);
-            
+
         }
     }
 }
