@@ -30,8 +30,6 @@ ProjectSection(SolutionItems) = preProject
 	scripts\init-dynamodb.sh = scripts\init-dynamodb.sh
 EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Thoughtworks.Gala.Web", "src\Thoughtworks.Gala.Web\Thoughtworks.Gala.Web.csproj", "{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -66,18 +64,6 @@ Global
 		{12D0AE1D-51CD-4830-B86B-27967A96219F}.Release|x64.Build.0 = Release|Any CPU
 		{12D0AE1D-51CD-4830-B86B-27967A96219F}.Release|x86.ActiveCfg = Release|Any CPU
 		{12D0AE1D-51CD-4830-B86B-27967A96219F}.Release|x86.Build.0 = Release|Any CPU
-		{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}.Debug|x64.Build.0 = Debug|Any CPU
-		{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}.Debug|x86.Build.0 = Debug|Any CPU
-		{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}.Release|x64.ActiveCfg = Release|Any CPU
-		{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}.Release|x64.Build.0 = Release|Any CPU
-		{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}.Release|x86.ActiveCfg = Release|Any CPU
-		{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -85,7 +71,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{1749AF17-CF21-4691-8C12-87C15C031C18} = {EF4EB2FC-20FB-48D8-AF5A-ADE96016A034}
 		{12D0AE1D-51CD-4830-B86B-27967A96219F} = {C3F8E6C4-477A-48C2-B293-CE18838A17C2}
-		{10D26CC5-3BE1-4282-89F6-78AF6F6E70EA} = {EF4EB2FC-20FB-48D8-AF5A-ADE96016A034}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {063BA0C3-80E7-4F24-BE17-5B0D8BE82A50}

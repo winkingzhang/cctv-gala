@@ -76,7 +76,6 @@ jobs:
     - name: Publish artifacts
       run: |
           dotnet publish src/Thoughtworks.Gala.WebApi/Thoughtworks.Gala.WebApi.csproj --configuration Release --no-restore --no-build --output publish/webapi
-          dotnet publish src/Thoughtworks.Gala.Web/Thoughtworks.Gala.Web.csproj --configuration Release --no-restore --no-build --output publish/web
 
     # Upload webapi artifacts
     - name: Upload webapi artifact
@@ -84,10 +83,3 @@ jobs:
       with:
         name: webapi-artifact
         path: publish/webapi
-
-      # Upload web artifacts
-    - name: Upload webapi artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: web-artifact
-        path: publish/web
