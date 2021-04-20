@@ -1,16 +1,13 @@
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Diagnostics.CodeAnalysis;
-using Thoughtworks.Gala.WebApi.Entities;
-using Thoughtworks.Gala.WebApi.Pagination;
+using Serilog;
+using Thoughtworks.Gala.WebApi.ModelBinders;
 using Thoughtworks.Gala.WebApi.Repositories;
 
 namespace Thoughtworks.Gala.WebApi
@@ -46,21 +43,17 @@ namespace Thoughtworks.Gala.WebApi
             {
                 services.AddAWSService<IAmazonDynamoDB>();
             }
-            services.AddTransient<IDynamoDBContext>(sp => new DynamoDBContext(sp.GetService<IAmazonDynamoDB>()));
 
-            services.AddScoped<IRepository<Guid, GalaEntity>>(sp => new GalaRepository(sp.GetService<IDynamoDBContext>()));
-            services.AddScoped<IRepository<Guid, ProgramEntity>>(sp => new ProgramRepository(sp.GetService<IDynamoDBContext>()));
-            services.AddScoped<IRepository<Guid, PerformerEntity>>(sp => new PerformerRepository(sp.GetService<IDynamoDBContext>()));
+            services.AddTransient<IDynamoDBContext, DynamoDBContext>();
+
+            services.AddScoped<IGalaRepository, GalaRepository>();
+            services.AddScoped<IProgramRepository, ProgramRepository>();
+            services.AddScoped<IPerformerRepository, PerformerRepository>();
 
             services.AddHttpContextAccessor();
-            services.AddSingleton((Func<IServiceProvider, IPaginationUriService>)(o =>
-            {
-                var accessor = o.GetRequiredService<IHttpContextAccessor>();
-                var request = accessor.HttpContext.Request;
-                return new PaginationUriService(string.Concat(request.Scheme, "://", request.Host.ToUriComponent()));
-            }));
 
-            services.AddControllers();
+            services.AddControllers().AddMvcOptions(options => 
+                options.ModelBinderProviders.Insert(0, new YearsModelBinderProvider()));
 
             // Register the Swagger Generator service. This service is responsible for genrating Swagger Documents.
             // Note: Add this service at the end after AddMvc() or AddMvcCore().
@@ -90,14 +83,9 @@ namespace Thoughtworks.Gala.WebApi
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app /*, IWebHostEnvironment env*/)
         {
             app.UseExceptionHandler("/error");
-
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
@@ -106,7 +94,16 @@ namespace Thoughtworks.Gala.WebApi
             // specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "CCTV Gala API"); });
 
+            // The default HSTS value is 30 days.
+            // You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+            app.UseHsts();
+            
             //app.UseHttpsRedirection();
+            
+            // Write streamlined request completion events, instead of the more verbose ones from the framework.
+            // To use the default framework request logging instead, remove this line and set the "Microsoft"
+            // level in appsettings.json to "Information".
+            app.UseSerilogRequestLogging();
 
             app.UseRouting();
 

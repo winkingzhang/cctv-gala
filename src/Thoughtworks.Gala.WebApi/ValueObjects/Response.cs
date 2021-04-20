@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Thoughtworks.Gala.WebApi.ValueObjects
 {
-    public class Response<TViewModel>
+    public class Response<TViewModel> where TViewModel: class
     {
         protected Response()
         {
@@ -11,7 +10,7 @@ namespace Thoughtworks.Gala.WebApi.ValueObjects
             Errors = new Dictionary<string, dynamic>();
         }
 
-        public Response(TViewModel data)
+        public Response(TViewModel? data)
         {
             Succeeded = true;
             Message = string.Empty;
@@ -19,9 +18,9 @@ namespace Thoughtworks.Gala.WebApi.ValueObjects
             Data = data;
         }
 
-        public TViewModel Data { get; set; }
+        public TViewModel? Data { get; set; }
         public bool Succeeded { get; private set; }
-        public Dictionary<string, dynamic> Errors { get; set; }
-        public string Message { get; set; }
+        public Dictionary<string, dynamic>? Errors { get; set; }
+        public string? Message { get; set; }
     }
 }

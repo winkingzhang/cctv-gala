@@ -20,11 +20,21 @@ docker run --rm \
     dynamodb create-table \
       --table-name Galas \
       --attribute-definitions \
-        AttributeName=GalaId,AttributeType=S \
+      AttributeName=GalaId,AttributeType=S \
+      AttributeName=Year,AttributeType=N \
       --key-schema \
         AttributeName=GalaId,KeyType=HASH \
       --provisioned-throughput \
         ReadCapacityUnits=10,WriteCapacityUnits=5 \
+      --global-secondary-indexes \
+        "[ \
+          { \
+            \"IndexName\":\"GalaYearIndex\", \
+            \"KeySchema\":[{\"AttributeName\":\"Year\",\"KeyType\":\"HASH\"}], \
+            \"Projection\":{\"ProjectionType\":\"ALL\"}, \
+            \"ProvisionedThroughput\":{\"ReadCapacityUnits\":5,\"WriteCapacityUnits\":2} \
+          }
+         ]" \
       --region us-west-2 \
       --endpoint-url http://localhost:8000
       

@@ -5,18 +5,18 @@ namespace Thoughtworks.Gala.WebApi.ViewModels
 {
     public class ProgramViewModel
     {
-        [Required]
+        [Required] 
         public Guid ProgramId { get; set; }
 
-        [Required]
+        [Required] 
         [MaxLength(4000)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         public class Creation
         {
-            [Required]
-            [MaxLength(4000)]
-            public string Name { get; set; }
+            [Required] 
+            [MaxLength(4000)] 
+            public string Name { get; set; } = string.Empty;
         }
 
         public class Edit : ProgramViewModel

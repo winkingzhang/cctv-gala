@@ -26,7 +26,7 @@ namespace Thoughtworks.Gala.WebApi.Controllers
             _logger = logger;
         }
 
-        public Task GetErrorResponse()
+        public Task GetErrorResponseAsync()
         {
             var context = HttpContext.Features.Get<IExceptionHandlerFeature>();
             var exception = context.Error;

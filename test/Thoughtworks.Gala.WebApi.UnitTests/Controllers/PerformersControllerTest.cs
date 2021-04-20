@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -8,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Controllers;
 using Thoughtworks.Gala.WebApi.Entities;
-using Thoughtworks.Gala.WebApi.Pagination;
 using Thoughtworks.Gala.WebApi.Repositories;
 using Thoughtworks.Gala.WebApi.UnitTests.Utils;
 using Thoughtworks.Gala.WebApi.ValueObjects;
@@ -19,9 +17,8 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
 {
     public class PerformersControllerTest : AutoMapperAwareTest
     {
-        private Mock<IRepository<Guid, PerformerEntity>> _repoMock;
-        private IPaginationUriService _paginationUriService;
-        private Mock<ILogger<PerformersController>> _logger;
+        private Mock<IPerformerRepository>? _repoMock;
+        private Mock<ILogger<PerformersController>>? _logger;
 
         public PerformersControllerTest(AutoMapperFixture fixture) : base(fixture)
         {
@@ -30,8 +27,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
 
         private void SetupMocks()
         {
-            _repoMock = new Mock<IRepository<Guid, PerformerEntity>>();
-            _paginationUriService = new PaginationUriService("http://localhost:5000/");
+            _repoMock = new Mock<IPerformerRepository>();
             _logger = new Mock<ILogger<PerformersController>>();
         }
 
@@ -43,18 +39,18 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
                 Id = Guid.NewGuid(),
                 Name = "mockName"
             };
-            _repoMock.Setup(repo => repo.CreateEntityAsync(It.IsAny<PerformerEntity>(), It.IsAny<CancellationToken>()))
+            _repoMock!.Setup(repo => repo.CreatePerformerEntityAsync(It.IsAny<PerformerEntity>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
-            var performersController = new PerformersController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var performersController = new PerformersController(_repoMock.Object, Mapper, _logger!.Object);
             Assert.NotNull(performersController);
 
             var performerRequest = new Request<PerformerViewModel.Creation>()
             {
-                Data = new PerformerViewModel.Creation { Name = "mock" }
+                Data = new PerformerViewModel.Creation {Name = "mock"}
             };
             var performers = await performersController.CreatePerformerAsync(performerRequest) as CreatedAtRouteResult;
             Assert.NotNull(performers);
-            Assert.Equal("GetPerformerById", performers.RouteName);
+            Assert.Equal("GetPerformerById", performers!.RouteName);
             Assert.NotNull(performers.RouteValues);
 
             var performerResponse = performers.Value as Response<PerformerViewModel>;
@@ -64,25 +60,70 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         }
 
         [Fact]
+        public async Task Should_Get_BadRequest_When_Create_Performer_WithInvalidInput()
+        {
+            var performersController = new PerformersController(_repoMock!.Object, Mapper, _logger!.Object);
+            Assert.NotNull(performersController);
+
+            var performerRequest = new Request<PerformerViewModel.Creation>()
+            {
+                Data = null
+            };
+            performersController.ModelState.TryAddModelError("", "mock");
+            var performersResult =
+                await performersController.CreatePerformerAsync(performerRequest) as BadRequestObjectResult;
+            Assert.NotNull(performersResult);
+            var performerResponse = performersResult!.Value as ErrorResponse.BadRequest;
+            Assert.NotNull(performerResponse);
+        }
+
+        [Fact]
         public async Task Should_Get_PerformerList()
         {
-            var performersController = new PerformersController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object)
+            var expectedEntity = new PerformerEntity()
             {
-                ControllerContext = new ControllerContext
-                {
-                    HttpContext = new DefaultHttpContext()
-                    {
-                        Request = { Path = new PathString("/api/performers") }
-                    }
-                }
+                Id = Guid.NewGuid(),
+                Name = "mockName"
             };
+            _repoMock!.Setup(repo =>
+                    repo.GetPerformerEntityListByIdsAsync(It.IsAny<Guid[]>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<PerformerEntity>() {expectedEntity});
+            var performersController = new PerformersController(_repoMock.Object, Mapper, _logger!.Object);
 
             Assert.NotNull(performersController);
 
-            var performers = await performersController.GetPerformersAsync(new PaginationFilter()) as OkObjectResult;
-            Assert.NotNull(performers);
-            var performersResponse = performers.Value as Response<IEnumerable<PerformerViewModel>>;
+            var performersResult = await performersController.GetPerformersAsync(
+                new Guid[] {Guid.NewGuid()}) as OkObjectResult;
+            Assert.NotNull(performersResult);
+            var performersResponse = performersResult?.Value as Response<IList<PerformerViewModel>>;
             Assert.NotNull(performersResponse);
+        }
+
+        [Fact]
+        public async Task Should_Get_BadRequest_When_GetPerformerListById_With_Empty()
+        {
+            var performersController = new PerformersController(_repoMock!.Object, Mapper, _logger!.Object);
+            Assert.NotNull(performersController);
+
+            var performersResult = await performersController.GetPerformersAsync(
+                new Guid[0]) as BadRequestObjectResult;
+            Assert.NotNull(performersResult);
+            var performerResponse = performersResult?.Value as ErrorResponse.BadRequest;
+            Assert.NotNull(performerResponse);
+        }
+
+        [Fact]
+        public async Task Should_Get_BadRequest_When_GetPerformerListById()
+        {
+            var performersController = new PerformersController(_repoMock!.Object, Mapper, _logger!.Object);
+            performersController.ModelState.TryAddModelError("", "mock");
+            Assert.NotNull(performersController);
+
+            var performersResult = await performersController.GetPerformersAsync(
+                new Guid[] {Guid.NewGuid()}) as BadRequestObjectResult;
+            Assert.NotNull(performersResult);
+            var performerResponse = performersResult?.Value as ErrorResponse.BadRequest;
+            Assert.NotNull(performerResponse);
         }
 
         [Fact]
@@ -93,16 +134,16 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
                 Id = Guid.NewGuid(),
                 Name = "mockName"
             };
-            _repoMock.Setup(repo => repo.ReadEntityAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            _repoMock!.Setup(repo => repo.ReadEntityAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
 
-            var performersController = new PerformersController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var performersController = new PerformersController(_repoMock!.Object, Mapper, _logger!.Object);
             Assert.NotNull(performersController);
 
             var performer = await performersController.GetPerformerByIdAsync(Guid.NewGuid()) as OkObjectResult;
             Assert.NotNull(performer);
-            var PerformerResponse = performer.Value as Response<PerformerViewModel>;
-            Assert.NotNull(PerformerResponse);
+            var performerResponse = performer?.Value as Response<PerformerViewModel>;
+            Assert.NotNull(performerResponse);
         }
 
         [Fact]
@@ -113,10 +154,11 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
                 Id = Guid.NewGuid(),
                 Name = "mockName"
             };
-            _repoMock.Setup(repo =>
-                    repo.UpdateEntityAsync(It.IsAny<Guid>(), It.IsAny<PerformerEntity>(), It.IsAny<CancellationToken>()))
+            _repoMock!.Setup(repo =>
+                    repo.UpdateEntityAsync(It.IsAny<Guid>(), It.IsAny<PerformerEntity>(),
+                        It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
-            var performersController = new PerformersController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var performersController = new PerformersController(_repoMock!.Object, Mapper, _logger!.Object);
             Assert.NotNull(performersController);
 
             var performer = await performersController.EditPerformerByIdAsync(
@@ -127,27 +169,66 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
                 }
             ) as OkObjectResult;
             Assert.NotNull(performer);
-            var performerResponse = performer.Value as Response<PerformerViewModel>;
+            var performerResponse = performer?.Value as Response<PerformerViewModel>;
             Assert.NotNull(performerResponse);
         }
 
         [Fact]
-        public async Task Should_Get_Performer_When_DeletePerformerById()
+        public async Task Should_Get_BadRequest_When_EditPerformerById_With_Invalid()
+        {
+            var performersController = new PerformersController(_repoMock!.Object, Mapper, _logger!.Object);
+            performersController.ModelState.TryAddModelError("", "mock");
+            Assert.NotNull(performersController);
+
+            var performer = await performersController.EditPerformerByIdAsync(
+                Guid.NewGuid(),
+                new Request<PerformerViewModel.Edit>()
+                {
+                    Data = new PerformerViewModel.Edit()
+                }
+            ) as BadRequestObjectResult;
+            Assert.NotNull(performer);
+            var performerResponse = performer?.Value as ErrorResponse.BadRequest;
+            Assert.NotNull(performerResponse);
+        }
+
+        [Fact]
+        public async Task Should_Get_Performer_When_MarkPerformerAsDeletedById()
         {
             var expectedEntity = new PerformerEntity()
             {
                 Id = Guid.NewGuid(),
                 Name = "mockName"
             };
-            _repoMock.Setup(repo =>
-                    repo.DeleteEntityAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            _repoMock!.Setup(repo =>
+                    repo.MarkPerformerEntityAsDeletedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
-            var performersController = new PerformersController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var performersController = new PerformersController(_repoMock!.Object, Mapper, _logger!.Object);
             Assert.NotNull(performersController);
 
             var performer = await performersController.DeletePerformerByIdAsync(Guid.NewGuid()) as OkObjectResult;
             Assert.NotNull(performer);
-            var performerResponse = performer.Value as Response<PerformerViewModel>;
+            var performerResponse = performer?.Value as Response<PerformerViewModel>;
+            Assert.NotNull(performerResponse);
+        }
+
+        [Fact]
+        public async Task Should_Get_Performer_When_HardDeletePerformerById()
+        {
+            var expectedEntity = new PerformerEntity()
+            {
+                Id = Guid.NewGuid(),
+                Name = "mockName"
+            };
+            _repoMock!.Setup(repo =>
+                    repo.DeletePerformerEntityByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedEntity);
+            var performersController = new PerformersController(_repoMock!.Object, Mapper, _logger!.Object);
+            Assert.NotNull(performersController);
+
+            var performer = await performersController.DeletePerformerByIdAsync(Guid.NewGuid(), true) as OkObjectResult;
+            Assert.NotNull(performer);
+            var performerResponse = performer?.Value as Response<PerformerViewModel>;
             Assert.NotNull(performerResponse);
         }
     }

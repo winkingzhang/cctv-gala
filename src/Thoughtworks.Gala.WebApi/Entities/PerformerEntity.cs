@@ -13,15 +13,18 @@ namespace Thoughtworks.Gala.WebApi.Entities
         [DynamoDBHashKey("performerId", Converter = typeof(GuidConverter))]
         public Guid Id { get; set; }
 
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
-        public string Introduction { get; set; }
+        public string? Introduction { get; set; }
 
-        public bool IsDeleted { get; set; }
+        public bool? IsDeleted { get; set; }
 
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }
+
+        [DynamoDBVersion]
+        public int? VersionNumber { get; set; }
 
         public Task AssignFromAsync(IEntity<Guid> other)
         {

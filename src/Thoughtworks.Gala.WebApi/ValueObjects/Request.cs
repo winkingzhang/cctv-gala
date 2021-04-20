@@ -1,7 +1,14 @@
 ﻿namespace Thoughtworks.Gala.WebApi.ValueObjects
 {
-    public class Request<TViewModel>
+    /// <summary>
+    /// Represent the general request model, in which wraps a generic data with reference type
+    /// </summary>
+    /// <typeparam name="TViewModel">generic data type, must be a reference type</typeparam>
+    public class Request<TViewModel> where TViewModel: class
     {
-        public TViewModel Data { get; set; }
+        /// <summary>
+        /// Represent the data in this request, it can be nullable
+        /// </summary>
+        public TViewModel? Data { get; set; }
     }
 }

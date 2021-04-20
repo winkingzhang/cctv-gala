@@ -54,8 +54,8 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
             var mockedContext = new Mock<IDynamoDBContext>();
             var mockedRepository = new MockedSimpleRepository(mockedContext);
             mockedContext.Setup(dbc =>
-                    dbc.LoadAsync<MockedSimpleEntity>(It.Is<Guid>(g => g == id), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((MockedSimpleEntity)null);
+                    dbc.LoadAsync<MockedSimpleEntity?>(It.Is<Guid>(g => g == id), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((MockedSimpleEntity?)null);
             Assert.Throws<NotFoundException>(() =>
             {
                 mockedRepository.ReadEntityAsync(id)
@@ -81,8 +81,8 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
             var mockedContext = new Mock<IDynamoDBContext>();
             var mockedRepository = new MockedSimpleRepository(mockedContext);
             mockedContext.Setup(dbc =>
-                    dbc.LoadAsync<MockedSimpleEntity>(It.Is<Guid>(g => g == id), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((MockedSimpleEntity)null);
+                    dbc.LoadAsync<MockedSimpleEntity?>(It.Is<Guid>(g => g == id), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((MockedSimpleEntity?)null);
             Assert.Throws<NotFoundException>(() =>
             {
                 mockedRepository.UpdateEntityAsync(id, new MockedSimpleEntity(Guid.NewGuid()))
@@ -117,25 +117,46 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
         }
 
         [Fact]
-        public void Should_Throw_NotFoundException_When_DeleteEntityAsync_WithNotExist()
+        public async Task Should_Get_Entity_When_SoftDeleteEntityAsync()
+        {
+            var mockedContext = new Mock<IDynamoDBContext>();
+            var mockedRepository = new MockedRepository(mockedContext);
+            var entity = await mockedRepository.DeleteEntityAsync(Guid.NewGuid(), false);
+            Assert.NotNull(entity);
+        }
+
+        [Fact]
+        public async Task Should_Throw_NotSupportedException_When_SoftDeleteEntityAsync_WithNotSupport()
+        {
+            var mockedContext = new Mock<IDynamoDBContext>();
+            var mockedRepository = new MockedSimpleRepository(mockedContext);
+            await Assert.ThrowsAsync<NotSupportedException>(async () =>
+            {
+                await mockedRepository.DeleteEntityAsync(Guid.NewGuid(), false);
+            });
+        }
+
+        [Fact]
+        public async Task Should_Throw_NotFoundException_When_DeleteEntityAsync_WithNotExist()
         {
             var id = Guid.NewGuid();
             var mockedContext = new Mock<IDynamoDBContext>();
             var mockedRepository = new MockedSimpleRepository(mockedContext);
             mockedContext.Setup(dbc =>
-                    dbc.LoadAsync<MockedSimpleEntity>(It.Is<Guid>(g => g == id), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((MockedSimpleEntity)null);
-            Assert.Throws<NotFoundException>(() =>
+                    dbc.LoadAsync<MockedSimpleEntity?>(It.Is<Guid>(g => g == id), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((MockedSimpleEntity?)null);
+            await Assert.ThrowsAsync<NotFoundException>(async () =>
             {
-                mockedRepository.DeleteEntityAsync(id)
-                    .ConfigureAwait(false)
-                    .GetAwaiter()
-                    .GetResult();
+                await mockedRepository.DeleteEntityAsync(id);
             });
         }
 
         private class MockedSimpleEntity : IEntity<Guid>
         {
+            public MockedSimpleEntity()
+            {
+            }
+
             public MockedSimpleEntity(Guid id)
             {
                 Id = id;
@@ -144,8 +165,12 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
             public Guid Id { get; set; }
         }
 
-        private class MockedAssigableEntity : IEntity<Guid>, IAssignableEntity<Guid>
+        private class MockedAssigableEntity : IEntity<Guid>, IAssignableEntity<Guid>, ISoftDeletableEntity<Guid>
         {
+            public MockedAssigableEntity()
+            {
+            }
+
             public MockedAssigableEntity(Guid id)
             {
                 Id = id;
@@ -153,12 +178,14 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
 
             public Guid Id { get; set; }
 
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
+
+            public bool IsDeleted { get; set; }
 
             public Task AssignFromAsync(IEntity<Guid> other)
             {
                 var source = other as MockedAssigableEntity;
-                if (ReferenceEquals(null, source))
+                if (source is null)
                 {
                     throw new NotSupportedException(nameof(MockedAssigableEntity));
                 }
@@ -166,11 +193,16 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
                 Name = source.Name;
                 return Task.CompletedTask;
             }
+
+            public void MarkAsDeleted()
+            {
+                IsDeleted = true;
+            }
         }
 
         private abstract class MockedBaseRepository<TKey, TEntity>
             : Repository<TKey, TEntity>
-            where TEntity : class, IEntity<TKey>
+            where TEntity : class, IEntity<TKey>, new()
             where TKey : IEquatable<TKey>
         {
             private Mock<IDynamoDBContext> _mockedContext;

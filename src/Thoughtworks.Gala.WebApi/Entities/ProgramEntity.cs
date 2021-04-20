@@ -13,17 +13,21 @@ namespace Thoughtworks.Gala.WebApi.Entities
         [DynamoDBHashKey("programId", Converter = typeof(GuidConverter))]
         public Guid Id { get; set; }
 
-        public string Name { get; set; }
+        public string Name { get; set; }  = string.Empty;
 
-        public string Introduction { get; set; }
+        public string? Introduction { get; set; }
 
-        [DynamoDBProperty("Performers")] public Guid[] PerformerIds { get; set; }
+        [DynamoDBProperty("Performers")] 
+        public Guid[]? PerformerIds { get; set; }
 
-        public bool IsDeleted { get; set; }
+        public bool? IsDeleted { get; set; }
 
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }
+
+        [DynamoDBVersion]
+        public int? VersionNumber { get; set; }
 
         public Task AssignFromAsync(IEntity<Guid> other)
         {
@@ -35,7 +39,7 @@ namespace Thoughtworks.Gala.WebApi.Entities
             // ignore id
             Name = source.Name;
             Introduction = source.Introduction;
-            PerformerIds = source.PerformerIds.ToArray();
+            PerformerIds = source.PerformerIds?.ToArray();
             IsDeleted = source.IsDeleted;
             CreatedAt = source.CreatedAt;
             UpdatedAt = DateTime.UtcNow;

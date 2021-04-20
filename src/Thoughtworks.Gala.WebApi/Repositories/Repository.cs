@@ -1,6 +1,8 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Entities;
@@ -10,8 +12,8 @@ using NotSupportedException = Thoughtworks.Gala.WebApi.Exceptions.NotSupportedEx
 namespace Thoughtworks.Gala.WebApi.Repositories
 {
     public abstract class Repository<TKey, TEntity>
-        : IRepository<TKey, TEntity>, IQueryableRepository<TKey, TEntity>
-        where TEntity : class, IEntity<TKey>
+        : IRepository<TKey, TEntity>
+        where TEntity : class, IEntity<TKey>, new()
         where TKey : IEquatable<TKey>
     {
         [NotNull]
@@ -39,10 +41,10 @@ namespace Thoughtworks.Gala.WebApi.Repositories
             return await Context.LoadAsync<TEntity>(key, cancellationToken);
         }
 
-        public async Task<TEntity> ReadEntityAsync([NotNull] TKey key, CancellationToken cancellationToken = default)
+        public async Task<TEntity?> ReadEntityAsync([NotNull] TKey key, CancellationToken cancellationToken = default)
         {
             var original = await Context.LoadAsync<TEntity>(key, cancellationToken);
-            if (ReferenceEquals(null, original))
+            if (original is null)
             {
                 throw new NotFoundException($"{key}");
             }
@@ -66,9 +68,9 @@ namespace Thoughtworks.Gala.WebApi.Repositories
 
             await assignable.AssignFromAsync(entity);
 
-            await Context.SaveAsync(assignable, cancellationToken);
+            await Context.SaveAsync(assignable as TEntity, cancellationToken);
 
-            return assignable as TEntity;
+            return (assignable as TEntity)!;
         }
 
         public async Task<TEntity> DeleteEntityAsync(
@@ -94,10 +96,19 @@ namespace Thoughtworks.Gala.WebApi.Repositories
             }
             else
             {
-                throw new NotFoundException(original.GetType().Name);
+                throw new NotSupportedException(original.GetType().Name);
             }
 
             return original;
+        }
+
+        [ExcludeFromCodeCoverage]
+        public async Task<IList<TEntity>> QueryEntitiesAsync(IEnumerable<TKey> keys, CancellationToken cancellationToken = default)
+        {
+            var batchGet = Context.CreateBatchGet<TEntity>();
+            keys.ToList().ForEach(key => batchGet.AddKey(key));
+            await batchGet.ExecuteAsync(cancellationToken);
+            return batchGet.Results;
         }
     }
 }
