@@ -136,6 +136,10 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
 
         private class MockedSimpleEntity : IEntity<Guid>
         {
+            public MockedSimpleEntity()
+            {
+            }
+
             public MockedSimpleEntity(Guid id)
             {
                 Id = id;
@@ -146,6 +150,10 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
 
         private class MockedAssigableEntity : IEntity<Guid>, IAssignableEntity<Guid>
         {
+            public MockedAssigableEntity()
+            {
+            }
+
             public MockedAssigableEntity(Guid id)
             {
                 Id = id;
@@ -158,7 +166,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
             public Task AssignFromAsync(IEntity<Guid> other)
             {
                 var source = other as MockedAssigableEntity;
-                if (ReferenceEquals(null, source))
+                if (source is null)
                 {
                     throw new NotSupportedException(nameof(MockedAssigableEntity));
                 }
@@ -170,7 +178,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Repositories
 
         private abstract class MockedBaseRepository<TKey, TEntity>
             : Repository<TKey, TEntity>
-            where TEntity : class, IEntity<TKey>
+            where TEntity : class, IEntity<TKey>, new()
             where TKey : IEquatable<TKey>
         {
             private Mock<IDynamoDBContext> _mockedContext;

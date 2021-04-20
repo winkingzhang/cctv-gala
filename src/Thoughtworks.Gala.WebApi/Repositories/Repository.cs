@@ -1,6 +1,11 @@
-﻿using Amazon.DynamoDBv2.DataModel;
+﻿using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.DocumentModel;
+using Amazon.DynamoDBv2.Model;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Entities;
@@ -10,8 +15,8 @@ using NotSupportedException = Thoughtworks.Gala.WebApi.Exceptions.NotSupportedEx
 namespace Thoughtworks.Gala.WebApi.Repositories
 {
     public abstract class Repository<TKey, TEntity>
-        : IRepository<TKey, TEntity>, IQueryableRepository<TKey, TEntity>
-        where TEntity : class, IEntity<TKey>
+        : IRepository<TKey, TEntity>
+        where TEntity : class, IEntity<TKey>, new()
         where TKey : IEquatable<TKey>
     {
         [NotNull]
@@ -42,7 +47,7 @@ namespace Thoughtworks.Gala.WebApi.Repositories
         public async Task<TEntity> ReadEntityAsync([NotNull] TKey key, CancellationToken cancellationToken = default)
         {
             var original = await Context.LoadAsync<TEntity>(key, cancellationToken);
-            if (ReferenceEquals(null, original))
+            if (original is null)
             {
                 throw new NotFoundException($"{key}");
             }
@@ -66,7 +71,7 @@ namespace Thoughtworks.Gala.WebApi.Repositories
 
             await assignable.AssignFromAsync(entity);
 
-            await Context.SaveAsync(assignable, cancellationToken);
+            await Context.SaveAsync(assignable as TEntity, cancellationToken);
 
             return assignable as TEntity;
         }
@@ -98,6 +103,14 @@ namespace Thoughtworks.Gala.WebApi.Repositories
             }
 
             return original;
+        }
+
+        public async Task<IList<TEntity>> QueryEntitiesAsync(TKey[] keys, CancellationToken cancellationToken = default)
+        {
+            var batchGet = Context.CreateBatchGet<TEntity>();
+            keys.ToList().ForEach(key => batchGet.AddKey(key));
+            await batchGet.ExecuteAsync(cancellationToken);
+            return batchGet.Results;
         }
     }
 }

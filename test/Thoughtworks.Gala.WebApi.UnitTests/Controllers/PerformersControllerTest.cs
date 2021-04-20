@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Controllers;
 using Thoughtworks.Gala.WebApi.Entities;
-using Thoughtworks.Gala.WebApi.Pagination;
 using Thoughtworks.Gala.WebApi.Repositories;
 using Thoughtworks.Gala.WebApi.UnitTests.Utils;
 using Thoughtworks.Gala.WebApi.ValueObjects;
@@ -19,8 +18,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
 {
     public class PerformersControllerTest : AutoMapperAwareTest
     {
-        private Mock<IRepository<Guid, PerformerEntity>> _repoMock;
-        private IPaginationUriService _paginationUriService;
+        private Mock<IPerformerRepository> _repoMock;
         private Mock<ILogger<PerformersController>> _logger;
 
         public PerformersControllerTest(AutoMapperFixture fixture) : base(fixture)
@@ -30,8 +28,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
 
         private void SetupMocks()
         {
-            _repoMock = new Mock<IRepository<Guid, PerformerEntity>>();
-            _paginationUriService = new PaginationUriService("http://localhost:5000/");
+            _repoMock = new Mock<IPerformerRepository>();
             _logger = new Mock<ILogger<PerformersController>>();
         }
 
@@ -45,7 +42,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
             };
             _repoMock.Setup(repo => repo.CreateEntityAsync(It.IsAny<PerformerEntity>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
-            var performersController = new PerformersController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var performersController = new PerformersController(_repoMock.Object, Mapper, _logger.Object);
             Assert.NotNull(performersController);
 
             var performerRequest = new Request<PerformerViewModel.Creation>()
@@ -66,7 +63,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         [Fact]
         public async Task Should_Get_PerformerList()
         {
-            var performersController = new PerformersController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object)
+            var performersController = new PerformersController(_repoMock.Object, Mapper, _logger.Object)
             {
                 ControllerContext = new ControllerContext
                 {
@@ -79,7 +76,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
 
             Assert.NotNull(performersController);
 
-            var performers = await performersController.GetPerformersAsync(new PaginationFilter()) as OkObjectResult;
+            var performers = await performersController.GetPerformersAsync() as OkObjectResult;
             Assert.NotNull(performers);
             var performersResponse = performers.Value as Response<IEnumerable<PerformerViewModel>>;
             Assert.NotNull(performersResponse);
@@ -96,7 +93,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
             _repoMock.Setup(repo => repo.ReadEntityAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
 
-            var performersController = new PerformersController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var performersController = new PerformersController(_repoMock.Object, Mapper, _logger.Object);
             Assert.NotNull(performersController);
 
             var performer = await performersController.GetPerformerByIdAsync(Guid.NewGuid()) as OkObjectResult;
@@ -116,7 +113,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
             _repoMock.Setup(repo =>
                     repo.UpdateEntityAsync(It.IsAny<Guid>(), It.IsAny<PerformerEntity>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
-            var performersController = new PerformersController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var performersController = new PerformersController(_repoMock.Object, Mapper, _logger.Object);
             Assert.NotNull(performersController);
 
             var performer = await performersController.EditPerformerByIdAsync(
@@ -142,7 +139,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
             _repoMock.Setup(repo =>
                     repo.DeleteEntityAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
-            var performersController = new PerformersController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var performersController = new PerformersController(_repoMock.Object, Mapper, _logger.Object);
             Assert.NotNull(performersController);
 
             var performer = await performersController.DeletePerformerByIdAsync(Guid.NewGuid()) as OkObjectResult;
