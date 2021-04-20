@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using Thoughtworks.Gala.WebApi.Entities;
-using Thoughtworks.Gala.WebApi.Pagination;
 using Thoughtworks.Gala.WebApi.Repositories;
 using Thoughtworks.Gala.WebApi.ValueObjects;
 using Thoughtworks.Gala.WebApi.ViewModels;
@@ -26,20 +25,17 @@ namespace Thoughtworks.Gala.WebApi.Controllers
     [ProducesResponseType(StatusCodes.Status501NotImplemented)]
     public class GalasController : ControllerBase
     {
-        private readonly IRepository<Guid, GalaEntity> _galaRepository;
+        private readonly IGalaRepository _galaRepository;
         private readonly IMapper _mapper;
-        private readonly IPaginationUriService _paginationUriService;
         private readonly ILogger<GalasController> _logger;
 
         public GalasController(
-            IRepository<Guid, GalaEntity> galaRepository,
+            IGalaRepository galaRepository,
             IMapper mapper,
-            IPaginationUriService paginationUriService,
             ILogger<GalasController> logger)
         {
             _galaRepository = galaRepository;
             _mapper = mapper;
-            _paginationUriService = paginationUriService;
             _logger = logger;
         }
 
@@ -67,27 +63,100 @@ namespace Thoughtworks.Gala.WebApi.Controllers
                 new Response<GalaViewModel>(gala));
         }
 
-        // GET api/galas?pageNumber=&pageSize=&years=2020&years=2019
+        // GET api/galas?galaIds=CCE858B8-680B-47A8-8B70-DA73DE811643&galaIds=BA8E245C-614A-487B-8345-856566908886
         /// <summary>
-        /// Get CCTV Gala list which ordered by year (most recent first)
+        /// Get CCTV Gala list by galaIds
         /// </summary>
         /// <returns>
         /// A enumerator indicate the collection of CCTV Galas
         /// </returns>
         [HttpGet]
-        [ProducesResponseType(typeof(PagedResponse<IEnumerable<GalaViewModel>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetGalasAsync(
-            [FromQuery] PaginationFilter filter,
-            [FromQuery] uint[] years
-        )
+        [ProducesResponseType(typeof(Response<IEnumerable<GalaViewModel>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse.BadRequest), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GetGalasByIdsAsync([FromQuery] Guid[] galaIds)
         {
-            _logger.LogDebug("GetGalasAsync");
-            await Task.Delay(0);
-            var data = Enumerable.Empty<GalaViewModel>();
-            return Ok(data.ToPagedReponse(filter, data.Count(), _paginationUriService, Request.Path.Value));
+            _logger.LogDebug("GetGalasByIdsAsync");
+            if (galaIds is null || galaIds.Length == 0)
+            {
+                ModelState.AddModelError(string.Empty, $"{nameof(galaIds)} is null or empty");
+            }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ErrorResponse.BadRequest(ModelState));
+            }
+
+            var galasEntities = await _galaRepository.GetGalaEntityListByIdsAsync(galaIds, CancellationToken.None);
+
+            return Ok(new Response<IEnumerable<GalaViewModel>>(galasEntities
+                .Select(galaEntity => _mapper.Map<GalaViewModel>(galaEntity))
+                .ToList()));
+        }
+
+        // GET api/galas/years?years=2020&years=2021
+        /// <summary>
+        /// Get CCTV Gala list by year
+        /// </summary>
+        /// <returns>
+        /// A enumerator indicate the collection of CCTV Galas
+        /// </returns>
+        [HttpGet("years")]
+        [ProducesResponseType(typeof(Response<IEnumerable<GalaViewModel>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse.BadRequest), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GetGalasByYearsAsync([FromQuery] int[] years)
+        {
+            _logger.LogDebug("GetGalasByYearsAsync");
+            if (years is null || years.Length == 0)
+            {
+                ModelState.AddModelError(string.Empty, $"{nameof(years)} is null or empty");
+            }
+            else if (years.Any(year => year < 1982 || year >= DateTime.Now.Year))
+            {
+                ModelState.AddModelError(string.Empty, $"some of {nameof(years)} are out of range of 1982 to this year");
+            }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ErrorResponse.BadRequest(ModelState));
+            }
+
+            var galasEntities = await _galaRepository.GetGalaEntityListByYearsAsync(years, CancellationToken.None);
+
+            return Ok(new Response<IEnumerable<GalaViewModel>>(galasEntities
+                .Select(galaEntity => _mapper.Map<GalaViewModel>(galaEntity))
+                .ToList()));
+        }
+
+
+        // GET api/galas/zodiacs/{zodiac}
+        /// <summary>
+        /// Get CCTV Gala list by zodiac, for example, "Ox" should same to query with years [1985,1997,2009,2021]
+        /// </summary>
+        /// <returns>
+        /// A enumerator indicate the collection of CCTV Galas
+        /// </returns>
+        [HttpGet("zodiacs/{zodiac}")]
+        [ProducesResponseType(typeof(Response<IEnumerable<GalaViewModel>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse.BadRequest), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GetGalasByZodiacAsync([FromRoute] ChineseZodiac zodiac)
+        {
+            _logger.LogDebug("GetGalasByZodiacAsync");
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ErrorResponse.BadRequest(ModelState));
+            }
+
+            var galasEntities = await _galaRepository.GetGalaEntityListByZodiacAsync(zodiac, CancellationToken.None);
+
+            return Ok(new Response<IEnumerable<GalaViewModel>>(galasEntities
+                .Select(galaEntity => _mapper.Map<GalaViewModel>(galaEntity))
+                .ToList()));
         }
 
         // GET api/galas/{galaId}
+        /// <summary>
+        /// Get CCTV Gala by galaId
+        /// </summary>
+        /// <param name="galaId"></param>
+        /// <returns></returns>
         [HttpGet("{galaId}", Name = "GetGalaById")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(Response<GalaViewModel>), StatusCodes.Status200OK)]
@@ -99,21 +168,6 @@ namespace Thoughtworks.Gala.WebApi.Controllers
             var galaEntity = await _galaRepository.ReadEntityAsync(galaId, CancellationToken.None);
             var gala = _mapper.Map<GalaViewModel>(galaEntity);
             return Ok(new Response<GalaViewModel>(gala));
-        }
-
-        // GET api/galas/{galaId}/programs?pageNumber=&pageSize=
-        [HttpGet("{galaId}/Programs")]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(PagedResponse<IEnumerable<ProgramViewModel>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetGalaProgramsAsync(
-            [FromRoute] Guid galaId,
-            [FromQuery] PaginationFilter filter
-        )
-        {
-            _logger.LogDebug("GetGalaProgramsAsync");
-            await Task.Delay(0);
-            var data = Enumerable.Empty<ProgramViewModel>();
-            return Ok(data.ToPagedReponse(filter, data.Count(), _paginationUriService, Request.Path.Value));
         }
 
         // PUT api/galas/{galaId}

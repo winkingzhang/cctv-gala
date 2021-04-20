@@ -22,5 +22,6 @@
 		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="6.1.2" />
 		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.1.2" />
 		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.1.2" />
+		<PackageReference Include="System.ValueTuple" Version="4.5.0" />
 	</ItemGroup>
 </Project>

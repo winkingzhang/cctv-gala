@@ -8,7 +8,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Entities;
-using Thoughtworks.Gala.WebApi.Pagination;
 using Thoughtworks.Gala.WebApi.Repositories;
 using Thoughtworks.Gala.WebApi.ValueObjects;
 using Thoughtworks.Gala.WebApi.ViewModels;
@@ -28,18 +27,15 @@ namespace Thoughtworks.Gala.WebApi.Controllers
     {
         private readonly IRepository<Guid, ProgramEntity> _programRepository;
         private readonly IMapper _mapper;
-        private readonly IPaginationUriService _paginationUriService;
         private readonly ILogger<ProgramsController> _logger;
 
         public ProgramsController(
             IRepository<Guid, ProgramEntity> programRepository,
             IMapper mapper,
-            IPaginationUriService paginationUriService,
             ILogger<ProgramsController> logger)
         {
             _programRepository = programRepository;
             _mapper = mapper;
-            _paginationUriService = paginationUriService;
             _logger = logger;
         }
 
@@ -75,16 +71,13 @@ namespace Thoughtworks.Gala.WebApi.Controllers
         /// A enumerator indicate the collection of CCTV Gala Program
         /// </returns>
         [HttpGet]
-        [ProducesResponseType(typeof(PagedResponse<IEnumerable<ProgramViewModel>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetProgramsAsync(
-            [FromQuery] PaginationFilter filter,
-            [FromQuery] Guid? galaId
-        )
+        [ProducesResponseType(typeof(Response<IEnumerable<ProgramViewModel>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetProgramsAsync([FromQuery] Guid? galaId)
         {
             _logger.LogDebug("GetProgramsAsync");
             await Task.Delay(0);
             var data = Enumerable.Empty<ProgramViewModel>();
-            return Ok(data.ToPagedReponse(filter, data.Count(), _paginationUriService, Request.Path.Value));
+            return Ok(new Response<IEnumerable<ProgramViewModel>>(data));
         }
 
         // GET api/programs/{programId}

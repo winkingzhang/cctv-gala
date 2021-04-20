@@ -8,7 +8,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Entities;
-using Thoughtworks.Gala.WebApi.Pagination;
 using Thoughtworks.Gala.WebApi.Repositories;
 using Thoughtworks.Gala.WebApi.ValueObjects;
 using Thoughtworks.Gala.WebApi.ViewModels;
@@ -28,19 +27,16 @@ namespace Thoughtworks.Gala.WebApi.Controllers
     {
         private readonly IRepository<Guid, PerformerEntity> _performerRepository;
         private readonly IMapper _mapper;
-        private readonly IPaginationUriService _paginationUriService;
         private readonly ILogger<PerformersController> _logger;
 
         public PerformersController(
             IRepository<Guid, PerformerEntity> performerRepository,
             IMapper mapper,
-            IPaginationUriService paginationUriService,
             ILogger<PerformersController> logger
         )
         {
             _performerRepository = performerRepository;
             _mapper = mapper;
-            _paginationUriService = paginationUriService;
             _logger = logger;
         }
 
@@ -76,15 +72,13 @@ namespace Thoughtworks.Gala.WebApi.Controllers
         /// A enumerator indicate the collection of performers
         /// </returns>
         [HttpGet]
-        [ProducesResponseType(typeof(PagedResponse<IEnumerable<PerformerViewModel>>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetPerformersAsync(
-            [FromQuery] PaginationFilter filter
-        )
+        [ProducesResponseType(typeof(Response<IEnumerable<PerformerViewModel>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetPerformersAsync()
         {
             _logger.LogDebug("GetPerformersAsync");
             await Task.Delay(0);
             var data = Enumerable.Empty<PerformerViewModel>();
-            return Ok(data.ToPagedReponse(filter, data.Count(), _paginationUriService, Request.Path.Value));
+            return Ok(new Response<IEnumerable<PerformerViewModel>>(data));
         }
 
         // GET api/performers/{performerId}

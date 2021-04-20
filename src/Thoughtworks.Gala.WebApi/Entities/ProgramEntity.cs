@@ -25,6 +25,9 @@ namespace Thoughtworks.Gala.WebApi.Entities
 
         public DateTime UpdatedAt { get; set; }
 
+        [DynamoDBVersion]
+        public int? VersionNumber { get; set; }
+
         public Task AssignFromAsync(IEntity<Guid> other)
         {
             if (!(other is ProgramEntity source))

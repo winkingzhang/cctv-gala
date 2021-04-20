@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Controllers;
 using Thoughtworks.Gala.WebApi.Entities;
-using Thoughtworks.Gala.WebApi.Pagination;
 using Thoughtworks.Gala.WebApi.Repositories;
 using Thoughtworks.Gala.WebApi.UnitTests.Utils;
 using Thoughtworks.Gala.WebApi.ValueObjects;
@@ -19,8 +18,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
 {
     public class ProgramsControllerTest : AutoMapperAwareTest
     {
-        private Mock<IRepository<Guid, ProgramEntity>> _repoMock;
-        private IPaginationUriService _paginationUriService;
+        private Mock<IProgramRepository> _repoMock;
         private Mock<ILogger<ProgramsController>> _logger;
 
         public ProgramsControllerTest(AutoMapperFixture fixture) : base(fixture)
@@ -30,8 +28,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
 
         private void SetupMocks()
         {
-            _repoMock = new Mock<IRepository<Guid, ProgramEntity>>();
-            _paginationUriService = new PaginationUriService("http://localhost:5000/");
+            _repoMock = new Mock<IProgramRepository>();
             _logger = new Mock<ILogger<ProgramsController>>();
         }
 
@@ -45,7 +42,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
             };
             _repoMock.Setup(repo => repo.CreateEntityAsync(It.IsAny<ProgramEntity>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
-            var programsController = new ProgramsController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var programsController = new ProgramsController(_repoMock.Object, Mapper, _logger.Object);
             Assert.NotNull(programsController);
 
             var programRequest = new Request<ProgramViewModel.Creation>()
@@ -66,7 +63,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         [Fact]
         public async Task Should_Get_ProgramList()
         {
-            var programsController = new ProgramsController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object)
+            var programsController = new ProgramsController(_repoMock.Object, Mapper, _logger.Object)
             {
                 ControllerContext = new ControllerContext
                 {
@@ -79,7 +76,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
 
             Assert.NotNull(programsController);
 
-            var programs = await programsController.GetProgramsAsync(new PaginationFilter(), Guid.NewGuid()) as OkObjectResult;
+            var programs = await programsController.GetProgramsAsync(Guid.NewGuid()) as OkObjectResult;
             Assert.NotNull(programs);
             var programsResponse = programs.Value as Response<IEnumerable<ProgramViewModel>>;
             Assert.NotNull(programsResponse);
@@ -96,7 +93,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
             _repoMock.Setup(repo => repo.ReadEntityAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
 
-            var programsController = new ProgramsController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var programsController = new ProgramsController(_repoMock.Object, Mapper, _logger.Object);
             Assert.NotNull(programsController);
 
             var program = await programsController.GetProgramByIdAsync(Guid.NewGuid()) as OkObjectResult;
@@ -116,7 +113,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
             _repoMock.Setup(repo =>
                     repo.UpdateEntityAsync(It.IsAny<Guid>(), It.IsAny<ProgramEntity>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
-            var programsController = new ProgramsController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var programsController = new ProgramsController(_repoMock.Object, Mapper, _logger.Object);
             Assert.NotNull(programsController);
 
             var program = await programsController.EditProgramByIdAsync(
@@ -143,7 +140,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
                     repo.DeleteEntityAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
 
-            var programsController = new ProgramsController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var programsController = new ProgramsController(_repoMock.Object, Mapper, _logger.Object);
             Assert.NotNull(programsController);
 
             var program = await programsController.DeleteProgramByIdAsync(Guid.NewGuid()) as OkObjectResult;

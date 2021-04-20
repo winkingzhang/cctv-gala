@@ -12,6 +12,7 @@ namespace Thoughtworks.Gala.WebApi.Entities
 
         public string Name { get; set; }
 
+        [DynamoDBGlobalSecondaryIndexHashKey("GalaYearIndex")]
         public uint Year { get; set; }
 
         [DynamoDBProperty("Programs")] public Guid[] ProgramIds { get; set; }
@@ -21,6 +22,9 @@ namespace Thoughtworks.Gala.WebApi.Entities
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }
+
+        [DynamoDBVersion]
+        public int? VersionNumber { get; set; }
 
         public Task AssignFromAsync(IEntity<Guid> other)
         {

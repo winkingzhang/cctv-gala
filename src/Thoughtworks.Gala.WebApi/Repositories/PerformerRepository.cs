@@ -1,14 +1,14 @@
-﻿using Amazon.DynamoDBv2.DataModel;
+﻿using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.Model;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Entities;
 
 namespace Thoughtworks.Gala.WebApi.Repositories
 {
-    public sealed class PerformerRepository : Repository<Guid, PerformerEntity>
+    public sealed class PerformerRepository : Repository<Guid, PerformerEntity>, IPerformerRepository
     {
         public PerformerRepository([NotNull] IDynamoDBContext context)
             : base(context)

@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Thoughtworks.Gala.WebApi.Controllers;
 using Thoughtworks.Gala.WebApi.Entities;
-using Thoughtworks.Gala.WebApi.Pagination;
 using Thoughtworks.Gala.WebApi.Repositories;
 using Thoughtworks.Gala.WebApi.UnitTests.Utils;
 using Thoughtworks.Gala.WebApi.ValueObjects;
@@ -20,8 +19,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
 {
     public class GalasControllerTest : AutoMapperAwareTest
     {
-        private Mock<IRepository<Guid, GalaEntity>> _repoMock;
-        private IPaginationUriService _paginationUriService;
+        private Mock<IGalaRepository> _repoMock;
         private Mock<ILogger<GalasController>> _logger;
 
         public GalasControllerTest(AutoMapperFixture fixture) : base(fixture)
@@ -31,8 +29,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
 
         private void SetupMocks()
         {
-            _repoMock = new Mock<IRepository<Guid, GalaEntity>>();
-            _paginationUriService = new PaginationUriService("http://localhost:5000/");
+            _repoMock = new Mock<IGalaRepository>();
             _logger = new Mock<ILogger<GalasController>>();
         }
 
@@ -48,7 +45,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
             };
             _repoMock.Setup(repo => repo.CreateEntityAsync(It.IsAny<GalaEntity>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
-            var galasController = new GalasController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var galasController = new GalasController(_repoMock.Object, Mapper, _logger.Object);
             Assert.NotNull(galasController);
 
             var galaRequest = new Request<GalaViewModel.Creation>
@@ -81,7 +78,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
                 Year = 2020,
                 ProgramIds = new[] { Guid.NewGuid(), Guid.NewGuid() }
             };
-            var galasController = new GalasController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object)
+            var galasController = new GalasController(_repoMock.Object, Mapper, _logger.Object)
             {
                 ControllerContext = new ControllerContext()
             };
@@ -107,7 +104,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
         [Fact]
         public async Task Should_Get_GalaList()
         {
-            var galasController = new GalasController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object)
+            var galasController = new GalasController(_repoMock.Object, Mapper, _logger.Object)
             {
                 ControllerContext = new ControllerContext
                 {
@@ -119,33 +116,11 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
             };
 
             Assert.NotNull(galasController);
-
-            var galas = await galasController.GetGalasAsync(new PaginationFilter(), new uint[0]) as OkObjectResult;
+            _repoMock.Setup(repo => repo.GetGalaEntityListByIdsAsync(It.IsAny<Guid[]>(), It.IsAny<CancellationToken>()))
+                .Returns(() => Task.FromResult<IList<GalaEntity>>(new List<GalaEntity>() { }));
+            var galas = await galasController.GetGalasByIdsAsync(new Guid[] { Guid.NewGuid() }) as OkObjectResult;
             Assert.NotNull(galas);
             var galasResponse = galas.Value as Response<IEnumerable<GalaViewModel>>;
-            Assert.NotNull(galasResponse);
-        }
-
-        [Fact]
-        public async Task Should_Get_ProgramListByGalaId()
-        {
-            var galasController = new GalasController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object)
-            {
-                ControllerContext = new ControllerContext
-                {
-                    HttpContext = new DefaultHttpContext()
-                    {
-                        Request = { Path = new PathString($"/api/galas/{Guid.NewGuid()}/programs") }
-                    }
-                }
-            };
-
-            Assert.NotNull(galasController);
-
-            var galaPrograms =
-                await galasController.GetGalaProgramsAsync(Guid.NewGuid(), new PaginationFilter()) as OkObjectResult;
-            Assert.NotNull(galaPrograms);
-            var galasResponse = galaPrograms.Value as Response<IEnumerable<ProgramViewModel>>;
             Assert.NotNull(galasResponse);
         }
 
@@ -161,7 +136,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
             };
             _repoMock.Setup(repo => repo.ReadEntityAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
-            var galasController = new GalasController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var galasController = new GalasController(_repoMock.Object, Mapper, _logger.Object);
             Assert.NotNull(galasController);
 
             var gala = await galasController.GetGalaByIdAsync(Guid.NewGuid()) as OkObjectResult;
@@ -184,7 +159,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
             _repoMock.Setup(repo =>
                     repo.UpdateEntityAsync(It.IsAny<Guid>(), It.IsAny<GalaEntity>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
-            var galasController = new GalasController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var galasController = new GalasController(_repoMock.Object, Mapper, _logger.Object);
             Assert.NotNull(galasController);
 
             var gala = await galasController.EditGalaByIdAsync(Guid.NewGuid(), new Request<GalaViewModel.Edit>()
@@ -216,7 +191,7 @@ namespace Thoughtworks.Gala.WebApi.UnitTests.Controllers
             _repoMock.Setup(repo =>
                     repo.DeleteEntityAsync(It.IsAny<Guid>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedEntity);
-            var galasController = new GalasController(_repoMock.Object, Mapper, _paginationUriService, _logger.Object);
+            var galasController = new GalasController(_repoMock.Object, Mapper, _logger.Object);
             Assert.NotNull(galasController);
 
             var gala = await galasController.DeleteGalaByIdAsync(Guid.NewGuid(), true) as OkObjectResult;
